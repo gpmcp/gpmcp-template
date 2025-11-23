@@ -1,12 +1,12 @@
 [package]
-name = "project_tests"
+name = "project-tests"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-project_domain.workspace = true
-project_infra.workspace = true
-project_services.workspace = true
+project-domain.workspace = true
+project-infra.workspace = true
+project-services.workspace = true
 
 tokio.workspace = true
 tokio-test.workspace = true

@@ -1,11 +1,11 @@
 [package]
-name = "project_services"
+name = "project-services"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-project_domain.workspace = true
-project_infra.workspace = true
+project-domain.workspace = true
+project-infra.workspace = true
 
 tokio.workspace = true
 async-trait.workspace = true

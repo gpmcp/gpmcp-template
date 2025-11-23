@@ -1,10 +1,10 @@
 [package]
-name = "project_infra"
+name = "project-infra"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-project_domain.workspace = true
+project-domain.workspace = true
 
 tokio.workspace = true
 thiserror.workspace = true

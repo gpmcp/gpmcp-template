@@ -1,5 +1,5 @@
 [package]
-name = "project_ci"
+name = "project-ci"
 version = "0.1.0"
 edition = "2021"
 

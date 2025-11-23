@@ -69,6 +69,5 @@ echo "Next steps:"
 echo "  1. Review the changes: git diff"
 echo "  2. Build the project: cargo build"
 echo "  3. Run tests: cargo test"
-echo "  4. Generate CI workflows: cargo test -p ${NEW_NAME}_ci"
+echo "  4. Generate CI workflows: cargo test -p ${NEW_NAME}-ci"
 echo
-echo "See TEMPLATE_USAGE.md for more information."

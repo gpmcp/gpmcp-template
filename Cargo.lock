@@ -503,64 +503,64 @@ dependencies = [
 ]
 
 [[package]]
-name = "project_app"
+name = "project-app"
 version = "0.1.0"
 dependencies = [
- "project_domain",
+ "project-domain",
 ]
 
 [[package]]
-name = "project_ci"
+name = "project-ci"
 version = "0.1.0"
 dependencies = [
  "gh-workflow",
 ]
 
 [[package]]
-name = "project_client"
+name = "project-client"
 version = "0.1.0"
 dependencies = [
  "clap",
- "project_app",
+ "project-app",
  "tokio",
 ]
 
 [[package]]
-name = "project_domain"
+name = "project-domain"
 version = "0.1.0"
 dependencies = [
  "thiserror",
 ]
 
 [[package]]
-name = "project_infra"
+name = "project-infra"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "dotenvy",
- "project_domain",
+ "project-domain",
  "tempfile",
  "thiserror",
  "tokio",
 ]
 
 [[package]]
-name = "project_services"
+name = "project-services"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "project_domain",
- "project_infra",
+ "project-domain",
+ "project-infra",
  "tokio",
 ]
 
 [[package]]
-name = "project_tests"
+name = "project-tests"
 version = "0.1.0"
 dependencies = [
- "project_domain",
- "project_infra",
- "project_services",
+ "project-domain",
+ "project-infra",
+ "project-services",
  "tempfile",
  "tokio",
  "tokio-test",

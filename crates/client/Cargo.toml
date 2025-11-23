@@ -1,5 +1,5 @@
 [package]
-name = "project_client"
+name = "project-client"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,7 +8,7 @@ name = "project-cli"
 path = "src/main.rs"
 
 [dependencies]
-project_app.workspace = true
+project-app.workspace = true
 
 clap.workspace = true
 tokio.workspace = true
