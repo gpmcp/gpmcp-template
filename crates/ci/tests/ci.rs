@@ -59,8 +59,5 @@ fn main() {
             .pull_request(PullRequest::default().add_branch("main")))
         .add_job("test", test_job);
 
-    Generate::new(workflow)
-        .name("ci.yml")
-        .generate()
-        .unwrap();
+    Generate::new(workflow).name("ci.yml").generate().unwrap();
 }
