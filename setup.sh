@@ -58,12 +58,6 @@ echo "  → Updating sonar-project.properties..."
 sed -i.bak "s/YOUR_ORG/${ORG_NAME}/g" sonar-project.properties
 sed -i.bak "s/YOUR_PROJECT_KEY/${ORG_NAME}_${REPO_NAME}/g" sonar-project.properties
 
-# Rename crate directories
-echo "  → Renaming crate directories..."
-cd crates
-for dir in */; do# Project Name
-cd ..
-
 # Clean up backup files
 echo "  → Cleaning up..."
 find . -name "*.bak" -type f -delete
