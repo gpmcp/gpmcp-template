@@ -1,0 +1,11 @@
+[package]
+name = "project_services"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+project_domain.workspace = true
+project_infra.workspace = true
+
+tokio.workspace = true
+async-trait.workspace = true

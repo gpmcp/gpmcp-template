@@ -1,0 +1,14 @@
+[package]
+name = "project_client"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "project-cli"
+path = "src/main.rs"
+
+[dependencies]
+project_app.workspace = true
+
+clap.workspace = true
+tokio.workspace = true

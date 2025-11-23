@@ -1,0 +1,13 @@
+[package]
+name = "project_tests"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+project_domain.workspace = true
+project_infra.workspace = true
+project_services.workspace = true
+
+tokio.workspace = true
+tokio-test.workspace = true
+tempfile.workspace = true
