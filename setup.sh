@@ -45,12 +45,12 @@ echo "🔧 Applying changes..."
 
 # Replace in Cargo.toml files
 echo "  → Updating Cargo.toml files..."
-find . -name "Cargo.toml" -type f -exec sed -i.bak "s/project_/${NEW_NAME}_/g" {} \;
+find . -name "Cargo.toml" -type f -exec sed -i.bak "s/project-/${NEW_NAME}-/g" {} \;
 find . -name "Cargo.toml" -type f -exec sed -i.bak "s/project-cli/${NEW_NAME}-cli/g" {} \;
 
 # Replace in Rust files
 echo "  → Updating Rust files..."
-find . -name "*.rs" -type f -exec sed -i.bak "s/project_/${NEW_NAME}_/g" {} \;
+find . -name "*.rs" -type f -exec sed -i.bak "s/project-/${NEW_NAME}-/g" {} \;
 find . -name "*.rs" -type f -exec sed -i.bak "s/project-cli/${NEW_NAME}-cli/g" {} \;
 
 # Replace in sonar-project.properties
