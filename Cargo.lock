@@ -503,6 +503,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "project-api"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+]
+
+[[package]]
 name = "project-app"
 version = "0.1.0"
 dependencies = [
