@@ -1,5 +1,5 @@
-use gh_workflow::*;
 use gh_workflow::generate::Generate;
+use gh_workflow::*;
 
 #[test]
 fn main() {
