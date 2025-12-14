@@ -16,28 +16,34 @@
 # -------------------------------------------------------------------
 
 name: ci
-on:
+env:
+  RUSTFLAGS: '-Dwarnings'
+'on':
   pull_request:
+    types:
+    - opened
+    - synchronize
+    - reopened
     branches:
     - main
   push:
     branches:
     - main
 jobs:
-  test:
-    name: test
+  build:
+    name: Build and Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v4
     - name: Setup Rust Toolchain
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: nightly
         components: llvm-tools-preview
         cache: 'true'
-    - name: Install protoc
-      run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
     - name: Cache cargo-llvm-cov
       uses: actions/cache@v4
       with:
@@ -46,8 +52,12 @@ jobs:
         restore-keys: ${{ runner.os }}-cargo-llvm-cov-
     - name: Install cargo-llvm-cov
       run: cargo install cargo-llvm-cov || true
-    - name: Generate coverage
-      run: cargo +nightly llvm-cov --all-features --workspace --lcov --output-path lcov.info
+    - name: Generate coverage (main branch or expensive)
+      if: '${{ github.ref == ''refs/heads/main'' || contains(github.event.pull_request.labels.*.name, ''ci: expensive'') }}'
+      run: cargo +nightly llvm-cov --release --all-features --workspace --lcov --output-path lcov.info
+    - name: Generate coverage (fast)
+      if: '${{ github.ref != ''refs/heads/main'' && !contains(github.event.pull_request.labels.*.name, ''ci: expensive'') }}'
+      run: cargo +nightly llvm-cov --workspace --lcov --output-path lcov.info
     - name: Upload Coverage to Codecov
       uses: Wandalen/wretry.action@v3
       with:
@@ -57,3 +67,68 @@ jobs:
         with: |-
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lcov.info
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Setup Rust Toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: nightly
+        components: clippy, rustfmt
+    - name: Cargo Fmt
+      run: cargo +nightly fmt --all --check
+    - name: Cargo Clippy
+      run: cargo +nightly clippy --all-features --workspace -- -D warnings
+  release:
+    needs:
+    - build
+    - lint
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      packages: write
+    concurrency:
+      group: release-${{github.ref}}
+      cancel-in-progress: false
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Release Plz
+      uses: release-plz/action@v0.5
+      with:
+        command: release
+  release-pr:
+    needs:
+    - build
+    - lint
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    name: Release Pr
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      packages: write
+    concurrency:
+      group: release-${{github.ref}}
+      cancel-in-progress: false
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Release Plz
+      uses: release-plz/action@v0.5
+      with:
+        command: release-pr

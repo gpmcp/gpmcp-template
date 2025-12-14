@@ -1,11 +1,13 @@
-use gh_workflow::generate::Generate;
 use gh_workflow::*;
 
 #[test]
 fn main() {
-    // Create a workflow focused on testing and coverage
-    let test_job = Job::new("test")
-        .add_step(Step::checkout())
+    // Build and Test job with coverage
+    let build_job = Job::new("Build and Test")
+        .name("Build and Test")
+        .runs_on("ubuntu-latest")
+        .permissions(Permissions::default().contents(Level::Read))
+        .add_step(Step::new("Checkout Code").uses("actions", "checkout", "v4"))
         .add_step(
             Step::new("Setup Rust Toolchain")
                 .uses("actions-rust-lang", "setup-rust-toolchain", "v1")
@@ -15,10 +17,6 @@ fn main() {
                         .add("components", "llvm-tools-preview")
                         .add("cache", "true"),
                 ),
-        )
-        .add_step(
-            Step::new("Install protoc")
-                .run("sudo apt-get update && sudo apt-get install -y protobuf-compiler"),
         )
         .add_step(
             Step::new("Cache cargo-llvm-cov")
@@ -34,9 +32,16 @@ fn main() {
                 ),
         )
         .add_step(Step::new("Install cargo-llvm-cov").run("cargo install cargo-llvm-cov || true"))
-        .add_step(Step::new("Generate coverage").run(
-            "cargo +nightly llvm-cov --all-features --workspace --lcov --output-path lcov.info",
-        ))
+        .add_step(
+            Step::new("Generate coverage (main branch or expensive)")
+                .run("cargo +nightly llvm-cov --release --all-features --workspace --lcov --output-path lcov.info")
+                .if_condition(Expression::new("${{ github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'ci: expensive') }}")),
+        )
+        .add_step(
+            Step::new("Generate coverage (fast)")
+                .run("cargo +nightly llvm-cov --workspace --lcov --output-path lcov.info")
+                .if_condition(Expression::new("${{ github.ref != 'refs/heads/main' && !contains(github.event.pull_request.labels.*.name, 'ci: expensive') }}")),
+        )
         .add_step(
             Step::new("Upload Coverage to Codecov")
                 .uses("Wandalen", "wretry.action", "v3")
@@ -52,13 +57,108 @@ fn main() {
                 ),
         );
 
-    // Create the workflow
+    // Lint job
+    let lint_job = Job::new("Lint")
+        .name("Lint")
+        .runs_on("ubuntu-latest")
+        .permissions(Permissions::default().contents(Level::Read))
+        .add_step(Step::new("Checkout Code").uses("actions", "checkout", "v4"))
+        .add_step(
+            Step::new("Setup Rust Toolchain")
+                .uses("actions-rust-lang", "setup-rust-toolchain", "v1")
+                .with(
+                    Input::default()
+                        .add("toolchain", "nightly")
+                        .add("components", "clippy, rustfmt"),
+                ),
+        )
+        .add_step(Step::new("Cargo Fmt").run("cargo +nightly fmt --all --check"))
+        .add_step(
+            Step::new("Cargo Clippy")
+                .run("cargo +nightly clippy --all-features --workspace -- -D warnings"),
+        );
+
+    // Release job
+    let release_job = Job::new("Release")
+        .name("Release")
+        .runs_on("ubuntu-latest")
+        .needs(vec!["build".to_string(), "lint".to_string()])
+        .cond(Expression::new(
+            "${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}",
+        ))
+        .permissions(
+            Permissions::default()
+                .contents(Level::Write)
+                .pull_requests(Level::Write)
+                .packages(Level::Write),
+        )
+        .env(
+            Env::default()
+                .add("GITHUB_TOKEN", "${{ secrets.GITHUB_TOKEN }}")
+                .add(
+                    "CARGO_REGISTRY_TOKEN",
+                    "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+                ),
+        )
+        .add_step(Step::new("Checkout Code").uses("actions", "checkout", "v4"))
+        .add_step(
+            Step::new("Release Plz")
+                .uses("release-plz", "action", "v0.5")
+                .with(Input::default().add("command", "release")),
+        )
+        .concurrency(
+            Concurrency::new(Expression::new("release-${{github.ref}}")).cancel_in_progress(false),
+        );
+
+    // Release PR job
+    let release_pr_job = Job::new("Release Pr")
+        .name("Release Pr")
+        .runs_on("ubuntu-latest")
+        .add_needs("build")
+        .add_needs("lint")
+        .cond(Expression::new(
+            "${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}",
+        ))
+        .permissions(
+            Permissions::default()
+                .contents(Level::Write)
+                .pull_requests(Level::Write)
+                .packages(Level::Write),
+        )
+        .env(
+            Env::default()
+                .add("GITHUB_TOKEN", "${{ secrets.GITHUB_TOKEN }}")
+                .add(
+                    "CARGO_REGISTRY_TOKEN",
+                    "${{ secrets.CARGO_REGISTRY_TOKEN }}",
+                ),
+        )
+        .add_step(Step::new("Checkout Code").uses("actions", "checkout", "v4"))
+        .add_step(
+            Step::new("Release Plz")
+                .uses("release-plz", "action", "v0.5")
+                .with(Input::default().add("command", "release-pr")),
+        )
+        .concurrency(
+            Concurrency::new(Expression::new("release-${{github.ref}}")).cancel_in_progress(false),
+        );
+
     let workflow = Workflow::new("ci")
         .name("ci")
+        .env(Env::from(("RUSTFLAGS", "-Dwarnings")))
         .on(Event::default()
-            .push(Push::default().add_branch("main"))
-            .pull_request(PullRequest::default().add_branch("main")))
-        .add_job("test", test_job);
+            .pull_request(
+                PullRequest::default()
+                    .add_branch("main")
+                    .add_type(PullRequestType::Opened)
+                    .add_type(PullRequestType::Synchronize)
+                    .add_type(PullRequestType::Reopened),
+            )
+            .push(Push::default().add_branch("main")))
+        .add_job("build", build_job)
+        .add_job("lint", lint_job)
+        .add_job("release", release_job)
+        .add_job("release-pr", release_pr_job);
 
-    Generate::new(workflow).name("ci.yml").generate().unwrap();
+    workflow.generate().unwrap();
 }

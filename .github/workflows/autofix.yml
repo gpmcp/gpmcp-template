@@ -17,8 +17,8 @@
 
 name: autofix.ci
 env:
-  RUSTFLAGS: -Dwarnings
-on:
+  RUSTFLAGS: '-Dwarnings'
+'on':
   pull_request:
     types:
     - opened
@@ -37,6 +37,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    concurrency:
+      group: autofix-${{github.ref}}
+      cancel-in-progress: false
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -50,14 +53,11 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target
-    - name: Setup protoc
-      uses: arduino/setup-protoc@v3
+    - name: Install protoc
+      run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
     - name: Cargo Fmt
       run: cargo +nightly fmt --all
     - name: Cargo Clippy
       run: cargo +nightly clippy --fix --allow-dirty --all-features --workspace -- -D warnings
     - name: autofix.ci
       uses: autofix-ci/action@551dded8c6cc8a1054039c8bc0b8b48c51dfc6ef
-    concurrency:
-      group: autofix-${{github.ref}}
-      cancel-in-progress: false
