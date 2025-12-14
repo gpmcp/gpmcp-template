@@ -1,11 +1,3 @@
 [workspace]
 release = false
 publish = false
-
-[[package]]
-name = "api-keys-simplified"
-release = true
-publish = true
-
-[[package]]
-name = "ci"
